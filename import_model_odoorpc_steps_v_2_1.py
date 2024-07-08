@@ -12,14 +12,14 @@ _logger = logging.getLogger('odoorpc')
 _logger.setLevel(logging.INFO)
 
 GLOBAL_SKIP = False
-GLOBAL_MODE = 2  # 1 - normal, 2 - only link database
+GLOBAL_MODE = 1  # 1 - normal, 2 - only link database
 RPC_LANG = 'en_US'  # bg_BG, el_GR, en_US
 STEPS = {'step_1': {}, 'step_2': {}, 'step_3': {}, 'step_4': {}, 'step_5': {}, 'step_6': {}, 'step_7': {}, 'step_8': {},
          'step_9': {}, 'step_10': {}, 'step_11': {}, 'step_12': {}, 'step_13': {}, 'step_14': {}, 'step_15': {},
          'step_16': {}, 'step_17': {}, 'step_18': {}, 'step_19': {}, 'step_20': {}, 'step_21': {}, 'step_22': {},
          'step_23': {}, 'step_24': {}, 'step_25': {}, 'step_26': {}, 'step_27': {}, 'step_28': {}, 'step_29': {},
          'step_30': {}, 'step_31': {}, 'step_32': {}, 'step_33': {}, 'step_34': {}}
-EXECUTE = [10]  # 8
+EXECUTE = [3]  # 8
 
 # [1] res.partner
 STEPS['step_1']['MODEL'] = 'res.partner'  # Example model
@@ -64,7 +64,7 @@ STEPS['step_2']['COMPARE_FILED'] = ''
 # [3] product.category
 STEPS['step_3']['MODEL'] = 'product.category'  # Example model
 STEPS['step_3']['TARGET_MODEL'] = ''
-STEPS['step_3']['SEARCH_DOMAIN'] = [('id', 'in', [277, 458])]
+STEPS['step_3']['SEARCH_DOMAIN'] = [('id', '!=', 0)]
 STEPS['step_3']['SEARCH_DOMAINS'] = [[('parent_id', '!=', False)]]
 STEPS['step_3']['FIELDS'] = ['name', 'parent_id', 'complete_name']
 STEPS['step_3']['SKIP_FIELDS'] = ['parent_id']
@@ -616,7 +616,8 @@ def process_relation_field(relation_record, field_name, relation_model):
                 if parent_id:
                     relation_record[field_name] = parent_id[0]['res_id']
                 else:
-                    relation_record[field_name] = field_value[0]
+                    # relation_record[field_name] = field_value[0]
+                    relation_record['block'] = True
                 print(field_name, relation_model, field_value, relation_record[field_name])
 
             elif field_name in ['partner_id', 'partner_invoice_id', 'partner_shipping_id', 'partner_doctor_id']:
@@ -1538,10 +1539,11 @@ def process_step_mode_2(step):
                 break
             # Process and import/update in destination
             for record in source_data:
+                target_id = False
                 # _logger.info(f"{record}:{wrong_product_tmpl_id}")
-                if not wrong_product_tmpl_id.get(record['product_tmpl_id'][0]):
+                if record.get('product_tmpl_id') and not wrong_product_tmpl_id.get(record['product_tmpl_id'][0]):
                     wrong_product_tmpl_id[record['product_tmpl_id'][0]] = {}
-                if record['attribute_value_ids']:
+                if record.get('attribute_value_ids'):
                     if not wrong_product_tmpl_id[record['product_tmpl_id'][0]].get("-".join(map(str, set(record['attribute_value_ids'])))):
                         wrong_product_tmpl_id[record['product_tmpl_id'][0]]["-".join(map(str, set(record['attribute_value_ids'])))] = []
                     wrong_product_tmpl_id[record['product_tmpl_id'][0]]["-".join(map(str, set(record['attribute_value_ids'])))].append(record["id"])
@@ -1556,7 +1558,7 @@ def process_step_mode_2(step):
                                                             ('model', '=', target_model)
                                                         ],
                                                         ['res_id'])
-                if not existing_id:
+                if record.get('default_code') and not existing_id:
                     target_id = odoo_dest.search_and_read(target_model,
                                                           [(COMPARE_FILED, '=', record[COMPARE_FILED])],
                                                           [COMPARE_FILED]
@@ -1603,7 +1605,7 @@ def process_step_mode_2(step):
 
 if __name__ == '__main__':
     config = configparser.ConfigParser()
-    config.read("../conf/main.ini", "utf-8")
+    config.read("/etc/odoo/odoo-17.0/odoo2odoo.ini", "utf-8")
 
     # Create Odoo client instances for source and destination
     odoo_src = OdooClient(config["OdooSource"])
