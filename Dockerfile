@@ -18,7 +18,7 @@ RUN apt-get update && \
 RUN mkdir -p /opt/odoo_import_rpc && \
     mkdir -p /etc/odoo
 
-COPY --chown=root:root ./import_model_odoorpc_steps_v_2_11.py /opt/odoo_import_rpc/import_model_odoorpc_steps_v_2_11.py
+COPY --chown=root:root ./import_model_odoorpc_steps_v_2_12.py /opt/odoo_import_rpc/import_model_odoorpc_steps_v_2_12.py
 COPY --chown=root:root ./requirements.txt /opt/odoo_import_rpc/requirements.txt
 COPY --chown=root:root ./conf /etc/odoo
 
@@ -26,4 +26,4 @@ RUN pip3 install --upgrade pip && \
     pip3 install -r /opt/odoo_import_rpc/requirements.txt
 
 ENTRYPOINT ["python3"]
-CMD ["/opt/odoo_import_rpc/import_model_odoorpc_steps_v_2_11.py", "/etc/odoo/main.ini"]
+CMD ["/opt/odoo_import_rpc/import_model_odoorpc_steps_v_2_12.py", "/etc/odoo/main-dev2-11-17.ini"]

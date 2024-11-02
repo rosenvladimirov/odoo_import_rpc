@@ -51,9 +51,10 @@ EXECUTE = list(map(int, os.environ.get('EXECUTE', EXECUTE_PROFILES.get(EXECUTE_P
 # [1] res.partner
 STEPS['step_1']['MODEL'] = 'res.partner'  # Example model
 STEPS['step_1']['TARGET_MODEL'] = ''
-STEPS['step_1']['SEARCH_DOMAIN'] = [('is_company', '=', True), ('id', 'in', [10766, 1347,109,2768,2772,1273,4551,117,115,6626,10776,138,3366,191])]
+STEPS['step_1']['SEARCH_DOMAIN'] = [('is_company', '=', True)]
 # ('parent_id', '=', False)
-STEPS['step_1']['SEARCH_DOMAINS'] = [[('product_manufacture_ids','!=',False), ('is_company','=',1), ('parent_id', '=', False)]]
+STEPS['step_1']['SEARCH_DOMAINS'] = [[('parent_id', '=', False)]]
+STEPS['step_1']['AUTO'] = True
 STEPS['step_1']['FIELDS'] = ['name', 'email', 'address', 'vat', 'type', 'parent_id', 'company_type', 'lang',
                              'country_id', 'country_id', 'street', 'street2',
                              'city', 'zip', 'phone', 'mobile', "image", "company_id", "image"]  # 'image', Example fields
@@ -71,7 +72,8 @@ STEPS['step_1']['DEFAULT_FIELDS'] = {'company_id': 2}
 STEPS['step_2']['MODEL'] = 'res.partner'  # Example model
 STEPS['step_2']['TARGET_MODEL'] = ''
 STEPS['step_2']['SEARCH_DOMAIN'] = []
-STEPS['step_2']['SEARCH_DOMAINS'] = [[('parent_id', 'in', [10766, 1347,109,2768,2772,1273,4551,117,115,6626,10776,138,3366,191])]]
+STEPS['step_2']['SEARCH_DOMAINS'] = [[('parent_id', '!=', False)]]
+STEPS['step_2']['AUTO'] = True
 STEPS['step_2']['FIELDS'] = ['name', 'email', 'address', 'vat', 'type', 'parent_id', 'company_type', 'lang',
                              'country_id', 'street', 'street2',
                              'city', 'zip', 'phone', 'mobile', "image"]
@@ -877,9 +879,8 @@ class OdooClient:
             self.odoo.env.context['lang'] = RPC_LANG
 
         # Set source instance language bg_BG, el_GR, en_US
-
-        print(config_rpc.get('db'), config_rpc.get('user'), config_rpc.get('password'), self.odoo.env.user,
-              self.odoo.env.context, self.odoo.env._context)
+        print('Configurations', config_rpc.get('db'), config_rpc.get('user'), config_rpc.get('password'), self.odoo)
+        print('Open self', self.odoo.env.user, self.odoo.env.context, self.odoo.env._context)
         # self.odoo.env['res.users'].write([self.rpc_user_id], {'lang': self.rpc_lang})
 
     def set_environment(self, ctx):
@@ -915,10 +916,11 @@ def auto_get_fields(source, target):
             ('model', '=', source_model)
         ],
         ['name'])
+    print(f'source_model_id: {source_model_id}')
     source_field_ids = source.search_and_read(
         'ir.model.fields',
         [
-            ('model_id', '=', source_model_id['id'])
+            ('model_id', '=', source_model_id[0]['id'])
         ],
         ['name'])
     print("MODEL", source_model, source_model_id, source_field_ids)
@@ -931,7 +933,7 @@ def auto_get_fields(source, target):
     target_field_ids = source.search_and_read(
         'ir.model.fields',
         [
-            ('model_id', '=', target_model_id['id'])
+            ('model_id', '=', target_model_id[0]['id'])
         ],
         ['name'])
     print("MODEL", target_model, target_model_id, target_field_ids)
@@ -2333,6 +2335,9 @@ if __name__ == '__main__':
 
         EXCEPTION_FIELDS = STEPS[f'step_{step}'].get('EXCEPTION_FIELDS') or []
         ACTION = STEPS[f'step_{step}'].get('ACTION') or False
+
+        if STEPS[f'step_{step}'].get('AUTO', False):
+            auto_get_fields(odoo_src, odoo_dest)
 
         if GLOBAL_MODE == 1:
             process_step_mode_1(step)

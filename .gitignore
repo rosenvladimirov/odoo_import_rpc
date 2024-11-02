@@ -1,3 +1,6 @@
 /.venv/
 /.idea/
 /conf/main.ini
+/conf/main-dev1-11-17.ini
+/conf/main-dev2-11-17.ini
+odoo_migrate_builder.yaml

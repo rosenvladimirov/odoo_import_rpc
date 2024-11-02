@@ -1,60 +1,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: odoo-migrate-tool
+  name: odoo-migrate
   labels:
-    app: odoo-migrate-tool
+    app: odoo-migrate
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: odoo-migrate-tool
+      app: odoo-migrate
   template:
     metadata:
-      name: odoo-migrate-tool
+      name: odoo-migrate
       labels:
-        app: odoo-migrate-tool
+        app: odoo-migrate
     spec:
-      initContainers:
-      - name: git-clone
-        image: alpine
-        command: ["sh", "-c"]
-        args:
-        - |
-          apk add --no-cache git openssh 
-          mkdir ~/.ssh/
-          cp .ssh-src/* ~/.ssh/
-          eval `ssh-agent -s`
-          ssh-add ~/.ssh/id_rsa
-          ssh -v git@github.com
-          git clone git@github.com:rosenvladimirov/odoo_import_rpc.git /workspace
-        volumeMounts:
-        - name: docker-volume
-          mountPath: /workspace
-        - name: ssh-key-volume
-          mountPath: ".ssh-src/"
       containers:
-      - name: kaniko
-        image: gcr.io/kaniko-project/executor:latest
-        args:
-          - "--context=dir:///workspace"
-          - "--destination=vladimirovrosen/odoo-migrate-tool:2.11"
-        volumeMounts:
-          - name: kaniko-secret
-            mountPath: /kaniko/.docker/
-          - name: docker-volume
-            mountPath: /workspace
-      restartPolicy: Never
+        - name: odoo-migrate
+          image: vladimirovrosen/odoo-migrate-tool:2.12
+          imagePullPolicy: Always
+          env:
+            - name: EXECUTE
+              value: 1,2
+          volumeMounts:
+            - mountPath: /etc/odoo/main.ini
+              name: conf
+              subPath: main.ini
       volumes:
-        - name: kaniko-secret
-          secret:
-            secretName: regcred
-            items:
-              - key: .dockerconfigjson
-                path: config.json
-        - name: ssh-key-volume
-          secret:
-            secretName: ssh-key-secret
-            defaultMode: 0400
-        - name: docker-volume
-          emptyDir: {}
+      - name: conf
+        configMap:
+          name: odoo-migrate-config-data
+
