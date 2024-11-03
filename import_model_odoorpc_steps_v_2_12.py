@@ -49,92 +49,126 @@ EXECUTE_PROFILES = {
 EXECUTE = list(map(int, os.environ.get('EXECUTE', EXECUTE_PROFILES.get(EXECUTE_PROFILE, '1,2')).split(',')))
 
 # [1] res.partner
-STEPS['step_1']['MODEL'] = 'res.partner'  # Example model
-STEPS['step_1']['TARGET_MODEL'] = ''
-STEPS['step_1']['SEARCH_DOMAIN'] = [('is_company', '=', True)]
-# ('parent_id', '=', False)
-STEPS['step_1']['SEARCH_DOMAINS'] = [[('parent_id', '=', False)]]
-STEPS['step_1']['AUTO'] = True
-STEPS['step_1']['FIELDS'] = ['name', 'email', 'address', 'vat', 'type', 'parent_id', 'company_type', 'lang',
-                             'country_id', 'country_id', 'street', 'street2',
-                             'city', 'zip', 'phone', 'mobile', "image", "company_id", "image"]  # 'image', Example fields
-STEPS['step_1']['SKIP_FIELDS'] = []
-STEPS['step_1']['RELATIONAL_FIELDS'] = ['parent_id', 'country_id']  # Add other relational fields as needed
-STEPS['step_1']['FIELD_MAPPING'] = {
-    'image': 'image_1920',
-    # 'uid': 'l10n_bg_uic',
-}
-STEPS['step_1']['ORDER'] = 'id'
-STEPS['step_1']['COMPARE_FILED'] = 'vat'
-STEPS['step_1']['DEFAULT_FIELDS'] = {'company_id': 2}
+try:
+    from models.res_partner import _get_res_partner
+except ImportError:
+    STEPS['step_1'] = {
+        'MODEL': 'res.partner',
+        'TARGET_MODEL': '',
+        'SEARCH_DOMAIN': [('is_company', '=', True)],
+        'SEARCH_DOMAINS': [[('parent_id', '=', False)]],
+        'AUTO': True,
+        'SKIP_FIELDS': [],
+        'RELATIONAL_FIELDS': ['parent_id', 'country_id'],  # Add other relational fields as needed
+        'FIELD_MAPPING': {
+            'image': 'image_1920',
+            # 'uid': 'l10n_bg_uic',
+        },
+        'ORDER': 'id',
+        'COMPARE_FILED': 'vat',
+        'DEFAULT_FIELDS': {'company_id': 2},
+    }
+else:
+    STEPS['step_1'] = _get_res_partner()
 
-# [2] persons in res.partner
-STEPS['step_2']['MODEL'] = 'res.partner'  # Example model
-STEPS['step_2']['TARGET_MODEL'] = ''
-STEPS['step_2']['SEARCH_DOMAIN'] = []
-STEPS['step_2']['SEARCH_DOMAINS'] = [[('parent_id', '!=', False)]]
-STEPS['step_2']['AUTO'] = True
-STEPS['step_2']['FIELDS'] = ['name', 'email', 'address', 'vat', 'type', 'parent_id', 'company_type', 'lang',
-                             'country_id', 'street', 'street2',
-                             'city', 'zip', 'phone', 'mobile', "image"]
-STEPS['step_2']['SKIP_FIELDS'] = []
-STEPS['step_2']['RELATIONAL_FIELDS'] = ['parent_id', 'country_id']
-STEPS['step_2']['FIELD_MAPPING'] = {
-    'image': 'image_1920',
-    # 'uid': 'l10n_bg_uic',
-}
-STEPS['step_2']['ORDER'] = 'id'
-STEPS['step_2']['COMPARE_FILED'] = 'ref'
-STEPS['step_2']['DEFAULT_FIELDS'] = {'company_id': 2}
+try:
+    from models.res_partner_person import _get_res_partner_person
+except ImportError:
+    # [2] persons in res.partner
+    STEPS['step_2'] = {
+        'MODEL': 'res.partner',
+        'TARGET_MODEL': '',
+        'SEARCH_DOMAIN': [],
+        'SEARCH_DOMAINS': [[('parent_id', '!=', False)]],
+        'AUTO': True,
+        'SKIP_FIELDS': [],
+        'RELATIONAL_FIELDS': ['parent_id', 'country_id'],
+        'FIELD_MAPPING': {
+            'image': 'image_1920',
+            # 'uid': 'l10n_bg_uic',
+        },
+        'ORDER': 'id',
+        'COMPARE_FILED': 'ref',
+        'DEFAULT_FIELDS': {'company_id': 2},
+    }
+else:
+    STEPS['step_2'] = _get_res_partner_person()
 
-# [3] product.category
-STEPS['step_3']['MODEL'] = 'product.category'  # Example model
-STEPS['step_3']['TARGET_MODEL'] = ''
-STEPS['step_3']['SEARCH_DOMAIN'] = [('id', '!=', 0)]
-STEPS['step_3']['SEARCH_DOMAINS'] = [[('complete_name', 'like', 'All / Saleable%')]]
-# STEPS['step_3']['SEARCH_DOMAINS'] = [[('complete_name', 'like', 'All')]]
-STEPS['step_3']['FIELDS'] = ['name', 'parent_id', 'complete_name']
-STEPS['step_3']['SKIP_FIELDS'] = []
-STEPS['step_3']['RELATIONAL_FIELDS'] = ['parent_id']
-STEPS['step_3']['FIELD_MAPPING'] = {}
-STEPS['step_3']['ORDER'] = 'complete_name'
-STEPS['step_3']['COMPARE_FILED'] = 'complete_name'
+try:
+    from models.product_category import _get_product_category
+except ImportError:
+    # [3] product.category
+    STEPS['step_3'] = {
+        'MODEL': 'product.category',
+        'TARGET_MODEL': '',
+        'SEARCH_DOMAIN': [('id', '!=', 0)],
+        'SEARCH_DOMAINS': [[('complete_name', 'like', 'All / Saleable%')]],
+        'FIELDS': ['name', 'parent_id', 'complete_name'],
+        'SKIP_FIELDS': [],
+        'RELATIONAL_FIELDS': ['parent_id'],
+        'FIELD_MAPPING': {},
+        'ORDER': 'complete_name',
+        'COMPARE_FILED': 'complete_name',
+    }
+else:
+    STEPS['step_3'] = _get_product_category()
 
-# [4] product attribute
-STEPS['step_4']['MODEL'] = 'product.attribute'  # Example model
-STEPS['step_4']['TARGET_MODEL'] = ''
-STEPS['step_4']['SEARCH_DOMAIN'] = []
-STEPS['step_4']['SEARCH_DOMAINS'] = [[('name', '!=', False)]]
-STEPS['step_4']['FIELDS'] = ['name', 'parent_id', 'complete_name']
-STEPS['step_4']['SKIP_FIELDS'] = []
-STEPS['step_4']['RELATIONAL_FIELDS'] = []
-STEPS['step_4']['FIELD_MAPPING'] = {}
-STEPS['step_4']['ORDER'] = 'id'
-STEPS['step_4']['COMPARE_FILED'] = ''
+try:
+    from models.product_attribute import _get_product_attribute
+except ImportError:
+    # [4] product attribute
+    STEPS['step_4'] = {
+        'MODEL': 'product.attribute',
+        'TARGET_MODEL': '',
+        'SEARCH_DOMAIN': [],
+        'SEARCH_DOMAINS': [[('name', '!=', False)]],
+        'FIELDS': ['name', 'parent_id', 'complete_name'],
+        'SKIP_FIELDS': [],
+        'RELATIONAL_FIELDS': [],
+        'FIELD_MAPPING': {},
+        'ORDER': 'id',
+        'COMPARE_FILED': '',
+    }
+else:
+    STEPS['step_4'] = _get_product_attribute()
 
 # [5] product.attribute.value
-STEPS['step_5']['MODEL'] = 'product.attribute.value'
-STEPS['step_5']['TARGET_MODEL'] = ''
-STEPS['step_5']['SEARCH_DOMAIN'] = []
-STEPS['step_5']['SEARCH_DOMAINS'] = [[('name', '!=', False)]]
-STEPS['step_5']['FIELDS'] = ['name', 'sequence', 'attribute_id']
-STEPS['step_5']['SKIP_FIELDS'] = []
-STEPS['step_5']['RELATIONAL_FIELDS'] = ['attribute_id']
-STEPS['step_5']['FIELD_MAPPING'] = {}
-STEPS['step_5']['ORDER'] = 'id'
-STEPS['step_5']['COMPARE_FILED'] = ''
+try:
+    from models.product_attribute_value import _get_product_attribute_value
+except ImportError:
+    STEPS['step_5'] = {
+        'MODEL': 'product.attribute.value',
+        'TARGET_MODEL': '',
+        'SEARCH_DOMAIN': [],
+        'SEARCH_DOMAINS': [[('name', '!=', False)]],
+        'FIELDS': ['name', 'sequence', 'attribute_id'],
+        'SKIP_FIELDS': [],
+        'RELATIONAL_FIELDS': ['attribute_id'],
+        'FIELD_MAPPING': {},
+        'ORDER': 'id',
+        'COMPARE_FILED': '',
+    }
+else:
+    STEPS['step_5'] = _get_product_attribute_value()
 
 # [6] product.uom.categ to uom.category
-STEPS['step_6']['MODEL'] = 'product.uom.categ'
-STEPS['step_6']['TARGET_MODEL'] = 'uom.category'
-STEPS['step_6']['SEARCH_DOMAIN'] = []
-STEPS['step_6']['SEARCH_DOMAINS'] = [[('name', '!=', False)]]
-STEPS['step_6']['FIELDS'] = ['name']
-STEPS['step_6']['SKIP_FIELDS'] = []
-STEPS['step_6']['RELATIONAL_FIELDS'] = []
-STEPS['step_6']['FIELD_MAPPING'] = {}
-STEPS['step_6']['ORDER'] = 'id'
-STEPS['step_6']['COMPARE_FILED'] = ''
+try:
+    from models.product_uom_categ import _get_product_uom_categ
+except ImportError:
+    STEPS['step_6'] = {
+        'MODEL': 'product.uom.categ',
+        'TARGET_MODEL': 'uom.category',
+        'SEARCH_DOMAIN': [],
+        'SEARCH_DOMAINS': [[('name', '!=', False)]],
+        'FIELDS': ['name'],
+        'SKIP_FIELDS': [],
+        'RELATIONAL_FIELDS': [],
+        'FIELD_MAPPING': {},
+        'ORDER': 'id',
+        'COMPARE_FILED': '',
+    }
+else:
+    STEPS['step_6'] = _get_product_uom_categ()
 
 # [7] product.uom to uom.uom
 STEPS['step_7']['MODEL'] = 'product.uom'
@@ -149,11 +183,9 @@ STEPS['step_7']['ORDER'] = 'id'
 STEPS['step_7']['COMPARE_FILED'] = ''
 
 # [8] product.template
-# [119117, 118591, 118591, 118912, 118628, 119106, 119121, 119131, 119129, 119130, 111583, 119108, 119132, 118999, 119127, 119125, 119122, 119133, 119136, 119123, 119124, 118628, 119106, 119121, 119131, 119129, 119130, 111583, 119108, 119132, 118999, 119127, 119125, 119122, 119133, 119136, 119123, 119124, 119100, 119111, 119137, 119112, 119126, 119113, 119092]
-# ('id', 'in', [118377])
 STEPS['step_8']['MODEL'] = 'product.template'
 STEPS['step_8']['TARGET_MODEL'] = ''
-STEPS['step_8']['SEARCH_DOMAIN'] = [('id', 'in', [119122, 119139, 119143, 119140, 119144])]
+STEPS['step_8']['SEARCH_DOMAIN'] = []
 STEPS['step_8']['SEARCH_DOMAINS'] = [[('attribute_line_ids', '=', False)]]
 # 'attribute_line_ids'
 STEPS['step_8']['FIELDS'] = ['name', 'sequence', 'description', 'description_purchase', 'description_sale',
@@ -175,14 +207,12 @@ STEPS['step_8']['ORDER'] = 'id'
 STEPS['step_8']['COMPARE_FILED'] = 'default_code'
 STEPS['step_8']['PRODUCT_CATEGORY'] = ['All']
 
-# Denger not use this step without 9 and 10 steps
-# ('id', 'in', [118377])
+# Danger not use this step without 9 and 10 steps
 STEPS['step_81']['MODEL'] = 'product.template'
 STEPS['step_81']['TARGET_MODEL'] = ''
 STEPS['step_81']['ACTION'] = 'delete'
-STEPS['step_81']['SEARCH_DOMAIN'] = [('id', '=', 119122)]
+STEPS['step_81']['SEARCH_DOMAIN'] = []
 STEPS['step_81']['SEARCH_DOMAINS'] = [[('attribute_line_ids', '!=', False)]]
-# 'attribute_line_ids'
 STEPS['step_81']['FIELDS'] = ['attribute_line_ids', 'name']
 STEPS['step_81']['SKIP_FIELDS'] = []
 STEPS['step_81']['RELATIONAL_FIELDS'] = ['attribute_line_ids']
@@ -193,7 +223,6 @@ STEPS['step_81']['COMPARE_FILED'] = 'default_code'
 STEPS['step_81']['PRODUCT_CATEGORY'] = ['All']
 
 # [9] product.attribute.line to product.template.attribute.line
-# ('product_tmpl_id', 'in', [118377])
 STEPS['step_9']['MODEL'] = 'product.attribute.line'
 STEPS['step_9']['TARGET_MODEL'] = 'product.template.attribute.line'
 STEPS['step_9']['SEARCH_DOMAIN'] = []
@@ -206,12 +235,9 @@ STEPS['step_9']['ORDER'] = 'id'
 STEPS['step_9']['COMPARE_FILED'] = ''
 
 # [10] product.product
-# ('attribute_value_ids', '!=', False)
-# ('product_tmpl_id', 'in', [118377]) 65, 69, 76
-# , ('id', '>', 1504), ('id', 'not in', [384, 386, 388, 390, 392, 945, 959, 961, 962, 967, 968, 1486, 1487, 1488, 1489, 1491, 1494, 1497, 1498, 1500, 1501, 1503, 1504])
 STEPS['step_10']['MODEL'] = 'product.product'
 STEPS['step_10']['TARGET_MODEL'] = ''
-STEPS['step_10']['SEARCH_DOMAIN'] = [('product_tmpl_id', '=', [119122, 119139, 119143, 119140, 119144])]
+STEPS['step_10']['SEARCH_DOMAIN'] = []
 STEPS['step_10']['SEARCH_DOMAINS'] = [[('attribute_value_ids', '=', False)]]
 STEPS['step_10']['FIELDS'] = ['default_code', 'specifications', 'image', 'attribute_value_ids', 'product_tmpl_id']
 STEPS['step_10']['SKIP_FIELDS'] = []
@@ -830,7 +856,7 @@ STEPS['step_43']['COMPARE_FILED'] = ''
 # stock.move.line
 STEPS['step_44']['MODEL'] = 'stock.move.line'
 STEPS['step_44']['TARGET_MODEL'] = ''
-STEPS['step_44']['SEARCH_DOMAIN'] = [('picking_id.company_id', '=', 6), ('move_id.purchase_line_id', '=', False), ('id', '>', 552780)]
+STEPS['step_44']['SEARCH_DOMAIN'] = [('picking_id.company_id', '=', 6), ('move_id.sale_line_id', '=', False)]
 STEPS['step_44']['SEARCH_DOMAINS'] = [[]]
 STEPS['step_44']['FIELDS'] = ['picking_id', 'move_id', 'product_id', 'product_uom_id', 'product_uom_qty',
                               'qty_done', 'lot_id', 'date', 'location_id', 'location_dest_id', 'picking_id.company_id'
@@ -1009,8 +1035,34 @@ def search_read_ir_model_data(relation_record, field_name, model, external_key=F
             print('Delete #', parent_id, check_target_record_unlink)
             check_target_record_unlink.unlink()
             relation_record['block'] = True
-    else:
-        relation_record['block'] = True
+
+    # Try for system external id
+    if relation_record.get('block') or not parent_id:
+        parent_id = odoo_src.search_and_read(
+            'ir.model.data',
+            [
+                ('res_id', '=', relation_record[field_name][0]),
+                ('module', '!=', '__import__'),
+                ('model', '=', model)],
+            ['name', 'module'])
+        if parent_id:
+            parent_id = odoo_dest.search_and_read(
+                'ir.model.data',
+                [
+                    ('name', '=', parent_id[0]['name']),
+                    ('module', '=', parent_id[0]['module']),
+                    ('model', '=', model)],
+                ['res_id'])
+            if parent_id:
+                relation_record[field_name] = parent_id[0]['res_id']
+                if relation_record.get('block'):
+                    del relation_record['block']
+                print('Result relation from system#', model, f'{parent_id[0]["module"]}{parent_id[0]["name"]}',
+                      relation_record.get('block') and 'for block' or 'for save', parent_id)
+            else:
+                relation_record['block'] = True
+        else:
+            relation_record['block'] = True
     print('Result relation#', model, external_key, relation_record.get('block') and 'for block' or 'for save', parent_id)
 
 

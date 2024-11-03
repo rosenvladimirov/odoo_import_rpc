@@ -26,4 +26,4 @@ RUN pip3 install --upgrade pip && \
     pip3 install -r /opt/odoo_import_rpc/requirements.txt
 
 ENTRYPOINT ["python3"]
-CMD ["/opt/odoo_import_rpc/import_model_odoorpc_steps_v_2_12.py", "/etc/odoo/main-dev2-11-17.ini"]
+CMD ["/opt/odoo_import_rpc/import_model_odoorpc_steps_v_2_12.py", "/etc/odoo/main.ini"]
