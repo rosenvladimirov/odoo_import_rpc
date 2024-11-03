@@ -71,10 +71,10 @@ except ImportError:
 else:
     STEPS['step_1'] = _get_res_partner()
 
+# [2] persons in res.partner
 try:
     from models.res_partner_person import _get_res_partner_person
 except ImportError:
-    # [2] persons in res.partner
     STEPS['step_2'] = {
         'MODEL': 'res.partner',
         'TARGET_MODEL': '',
@@ -94,10 +94,10 @@ except ImportError:
 else:
     STEPS['step_2'] = _get_res_partner_person()
 
+# [3] product.category
 try:
     from models.product_category import _get_product_category
 except ImportError:
-    # [3] product.category
     STEPS['step_3'] = {
         'MODEL': 'product.category',
         'TARGET_MODEL': '',
@@ -113,10 +113,10 @@ except ImportError:
 else:
     STEPS['step_3'] = _get_product_category()
 
+# [4] product attribute
 try:
     from models.product_attribute import _get_product_attribute
 except ImportError:
-    # [4] product attribute
     STEPS['step_4'] = {
         'MODEL': 'product.attribute',
         'TARGET_MODEL': '',
@@ -171,16 +171,23 @@ else:
     STEPS['step_6'] = _get_product_uom_categ()
 
 # [7] product.uom to uom.uom
-STEPS['step_7']['MODEL'] = 'product.uom'
-STEPS['step_7']['TARGET_MODEL'] = 'uom.uom'
-STEPS['step_7']['SEARCH_DOMAIN'] = []
-STEPS['step_7']['SEARCH_DOMAINS'] = [[('active', '!=', False)]]
-STEPS['step_7']['FIELDS'] = ['name', 'factor', 'uom_type', 'rounding']
-STEPS['step_7']['SKIP_FIELDS'] = []
-STEPS['step_7']['RELATIONAL_FIELDS'] = ['category_id']
-STEPS['step_7']['FIELD_MAPPING'] = {}
-STEPS['step_7']['ORDER'] = 'id'
-STEPS['step_7']['COMPARE_FILED'] = ''
+try:
+    from models.product_uom import _get_product_uom
+except ImportError:
+    STEPS['step_7'] = {
+        'MODEL': 'product.uom',
+        'TARGET_MODEL': 'uom.uom',
+        'SEARCH_DOMAIN': [],
+        'SEARCH_DOMAINS': [[('active', '!=', False)]],
+        'FIELDS': ['name', 'factor', 'uom_type', 'rounding'],
+        'SKIP_FIELDS': [],
+        'RELATIONAL_FIELDS': ['category_id'],
+        'FIELD_MAPPING': {},
+        'ORDER': 'id',
+        'COMPARE_FILED': '',
+    }
+else:
+    STEPS['step_7'] = _get_product_uom_categ()
 
 # [8] product.template
 STEPS['step_8']['MODEL'] = 'product.template'
@@ -451,11 +458,9 @@ STEPS['step_191']['ORDER'] = 'id'
 STEPS['step_191']['COMPARE_FILED'] = ''
 
 # [20] 	sale.order.line
-# uom 79456, 52271
-# ('order_id', 'not in', [16450, 16469, 16498, 16499])
 STEPS['step_20']['MODEL'] = 'sale.order.line'
 STEPS['step_20']['TARGET_MODEL'] = ''
-STEPS['step_20']['SEARCH_DOMAIN'] = [('company_id', '=', 6), ('id', '>', 119666)]
+STEPS['step_20']['SEARCH_DOMAIN'] = [('company_id', '=', 6)]
 STEPS['step_20']['SEARCH_DOMAINS'] = [[]]
 # STEPS['step_20']['FIELDS'] = ['pricelist_id', 'company_id', 'currency_id', 'product_id', 'price_unit', 'product_uom',
 #                               'product_uom_qty', 'product_set_id', 'discount', 'order_id']
