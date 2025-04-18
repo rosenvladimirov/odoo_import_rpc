@@ -1,5 +1,4 @@
 import csv
-import glob
 import os
 import sys
 
@@ -9,6 +8,7 @@ import logging
 # import shutil
 from bs4 import BeautifulSoup
 # from setuptools.msvc import environ
+from pprint import pprint as pp
 
 logging.basicConfig()
 _logger = logging.getLogger('odoorpc')
@@ -17,14 +17,16 @@ _logger.setLevel(logging.INFO)
 CURRENT_ROW = os.environ.get('CURRENT_ROW', 0)
 FIELD_ID_MAPPING_SAVE = {}
 BLOCKED_FIELDS = []
+MADGIC_FIELDS = ['id', 'create_uid', 'create_date', 'write_uid', 'write_date', '__last_update']
 ACTION = False
 GLOBAL_SKIP = False
 GLOBAL_MODE = 1  # 1 - normal, 2 - only link database
 RPC_LANG = 'en_US'  # bg_BG, el_GR, en_US
-STEPS = {'step_1': {}, 'step_2': {}, 'step_3': {}, 'step_4': {}, 'step_5': {}, 'step_6': {}, 'step_7': {}, 'step_8': {}, 'step_81': {},
-         'step_9': {}, 'step_10': {}, 'step_11': {}, 'step_12': {}, 'step_13': {}, 'step_14': {}, 'step_15': {},
+STEPS = {'step_1': {}, 'step_111': {}, 'step_112': {}, 'step_2': {}, 'step_3': {}, 'step_4': {}, 'step_5': {}, 'step_6': {},
+         'step_7': {}, 'step_8': {}, 'step_81': {}, 'step_9': {}, 'step_10': {}, 'step_11': {}, 'step_12': {},
+         'step_13': {}, 'step_14': {}, 'step_141': {}, 'step_15': {},
          'step_16': {}, 'step_17': {}, 'step_18': {}, 'step_181': {}, 'step_19': {}, 'step_191': {}, 'step_20': {},
-         'step_21': {}, 'step_22': {}, 'step_23': {}, 'step_24': {}, 'step_25': {}, 'step_26': {}, 'step_27': {},
+         'step_21': {}, 'step_22': {}, 'step_221': {}, 'step_23': {}, 'step_24': {}, 'step_25': {}, 'step_26': {}, 'step_27': {},
          'step_271': {}, 'step_272': {}, 'step_28': {}, 'step_29': {}, 'step_30': {}, 'step_31': {}, 'step_32': {},
          'step_33': {}, 'step_34': {}, 'step_35': {}, 'step_36': {}, 'step_37': {}, 'step_38': {}, 'step_39': {},
          'step_40': {}, 'step_41': {}, 'step_42': {}, 'step_43': {}, 'step_44': {}, 'step_45': {}}
@@ -55,11 +57,15 @@ except ImportError:
     STEPS['step_1'] = {
         'MODEL': 'res.partner',
         'TARGET_MODEL': '',
-        'SEARCH_DOMAIN': [('is_company', '=', True)],
-        'SEARCH_DOMAINS': [[('parent_id', '=', False)]],
-        'AUTO': True,
+        'SEARCH_DOMAIN': [('is_company','=',True)],
+        'SEARCH_DOMAINS': [[]],
+        # 'AUTO': True,
+        # 'FIELDS': ['name', 'email', 'address', 'vat', 'type', 'parent_id', 'company_type', 'lang',
+        #                              'country_id', 'country_id', 'street', 'street2', 'currency_id',
+        #                              'city', 'zip', 'phone', 'mobile', "image", "company_id", "image"],
+        'FIELDS': ['name', 'parent_id', 'function', 'title', 'phone', 'image', 'job_position_id'], # Partner in several contact
         'SKIP_FIELDS': [],
-        'RELATIONAL_FIELDS': ['parent_id', 'country_id'],  # Add other relational fields as needed
+        'RELATIONAL_FIELDS': ['parent_id', 'country_id', 'currency_id', 'job_position_id', 'title'],  # Add other relational fields as needed
         'FIELD_MAPPING': {
             'image': 'image_1920',
             # 'uid': 'l10n_bg_uic',
@@ -78,9 +84,13 @@ except ImportError:
     STEPS['step_2'] = {
         'MODEL': 'res.partner',
         'TARGET_MODEL': '',
-        'SEARCH_DOMAIN': [],
-        'SEARCH_DOMAINS': [[('parent_id', '!=', False)]],
-        'AUTO': True,
+        'SEARCH_DOMAIN': [('is_company','=',False)],
+        'SEARCH_DOMAINS': [[]],
+        # 'SEARCH_DOMAINS': [[('parent_id', '!=', False), ('is_company','=',0)]],
+        # 'AUTO': True,
+        'FIELDS': ['name', 'email', 'address', 'type', 'parent_id', 'company_type', 'lang',
+                   'country_id', 'country_id', 'street', 'street2',
+                   'city', 'zip', 'phone', 'mobile', "image", "image"],
         'SKIP_FIELDS': [],
         'RELATIONAL_FIELDS': ['parent_id', 'country_id'],
         'FIELD_MAPPING': {
@@ -89,10 +99,40 @@ except ImportError:
         },
         'ORDER': 'id',
         'COMPARE_FILED': 'ref',
-        'DEFAULT_FIELDS': {'company_id': 2},
+        'DEFAULT_FIELDS': {'company_id': False},
     }
 else:
     STEPS['step_2'] = _get_res_partner_person()
+
+# Job position
+STEPS['step_111'] = {
+    'MODEL': 'res.partner.job_position',
+    'TARGET_MODEL': '',
+    'SEARCH_DOMAIN': [('id', '!=', False)],
+    'SEARCH_DOMAINS': [[]],
+    'FIELDS': ['name'],  # Partner in several contact
+    'SKIP_FIELDS': [],
+    'RELATIONAL_FIELDS': [],
+    # Add other relational fields as needed
+    'FIELD_MAPPING': {},
+    'ORDER': 'id',
+    'COMPARE_FILED': '',
+}
+
+# Title
+STEPS['step_112'] = {
+    'MODEL': 'res.partner.title',
+    'TARGET_MODEL': '',
+    'SEARCH_DOMAIN': [('id', '!=', False)],
+    'SEARCH_DOMAINS': [[]],
+    'FIELDS': ['name', 'shortcut'],  # Title
+    'SKIP_FIELDS': [],
+    'RELATIONAL_FIELDS': [],
+    # Add other relational fields as needed
+    'FIELD_MAPPING': {},
+    'ORDER': 'id',
+    'COMPARE_FILED': '',
+}
 
 # [3] product.category
 try:
@@ -102,7 +142,7 @@ except ImportError:
         'MODEL': 'product.category',
         'TARGET_MODEL': '',
         'SEARCH_DOMAIN': [('id', '!=', 0)],
-        'SEARCH_DOMAINS': [[('complete_name', 'like', 'All / Saleable%')]],
+        'SEARCH_DOMAINS': [[]],
         'FIELDS': ['name', 'parent_id', 'complete_name'],
         'SKIP_FIELDS': [],
         'RELATIONAL_FIELDS': ['parent_id'],
@@ -192,24 +232,25 @@ else:
 # [8] product.template
 STEPS['step_8']['MODEL'] = 'product.template'
 STEPS['step_8']['TARGET_MODEL'] = ''
-STEPS['step_8']['SEARCH_DOMAIN'] = []
-STEPS['step_8']['SEARCH_DOMAINS'] = [[('attribute_line_ids', '=', False)]]
+STEPS['step_8']['SEARCH_DOMAIN'] = [('active', '=', True)]
+STEPS['step_8']['SEARCH_DOMAINS'] = [[]]
+# STEPS['step_8']['SEARCH_DOMAINS'] = [[('attribute_line_ids', '=', False)]]
 # 'attribute_line_ids'
 STEPS['step_8']['FIELDS'] = ['name', 'sequence', 'description', 'description_purchase', 'description_sale',
-                             'tracking', 'taxes_id', 'supplier_taxes_id',
+                             'tracking',
                              'type', 'standard_price', 'active',
                              'volume', 'weight', 'sale_ok', 'purchase_ok', 'active',
                              'default_code', 'categ_id', 'image', 'description']
 STEPS['step_8']['SKIP_FIELDS'] = []
-STEPS['step_8']['RELATIONAL_FIELDS'] = ['categ_id', 'taxes_id', 'supplier_taxes_id', 'attribute_line_ids', 'manufacturer_id']
+STEPS['step_8']['RELATIONAL_FIELDS'] = ['categ_id', 'taxes_id', 'supplier_taxes_id', 'attribute_line_ids', 'manufacturer_id', 'attribute_line_ids']
 STEPS['step_8']['FIELD_MAPPING'] = {
     'image': 'image_1920',
     'specifications': 'alt_name',
 }
-STEPS['step_8']['FIELD_ID_MAPPING'] = {
-    'taxes_id': [[42, 43, 21, 23, 25, 26, 27, 29], [164, 166, 1, 2, 4, 6, 7, 9]],
-    'supplier_taxes_id': [[46, 49, 34, 154, 32, 143, 35], [151, 152, 12, 21, 16, 24, 13]],
-}
+# STEPS['step_8']['FIELD_ID_MAPPING'] = {
+#     'taxes_id': [[42, 43, 21, 23, 25, 26, 27, 29], [164, 166, 1, 2, 4, 6, 7, 9]],
+#     'supplier_taxes_id': [[46, 49, 34, 154, 32, 143, 35], [151, 152, 12, 21, 16, 24, 13]],
+# }
 STEPS['step_8']['ORDER'] = 'id'
 STEPS['step_8']['COMPARE_FILED'] = 'default_code'
 STEPS['step_8']['PRODUCT_CATEGORY'] = ['All']
@@ -219,7 +260,7 @@ STEPS['step_81']['MODEL'] = 'product.template'
 STEPS['step_81']['TARGET_MODEL'] = ''
 STEPS['step_81']['ACTION'] = 'delete'
 STEPS['step_81']['SEARCH_DOMAIN'] = []
-STEPS['step_81']['SEARCH_DOMAINS'] = [[('attribute_line_ids', '!=', False)]]
+STEPS['step_81']['SEARCH_DOMAINS'] = [[]]
 STEPS['step_81']['FIELDS'] = ['attribute_line_ids', 'name']
 STEPS['step_81']['SKIP_FIELDS'] = []
 STEPS['step_81']['RELATIONAL_FIELDS'] = ['attribute_line_ids']
@@ -233,7 +274,7 @@ STEPS['step_81']['PRODUCT_CATEGORY'] = ['All']
 STEPS['step_9']['MODEL'] = 'product.attribute.line'
 STEPS['step_9']['TARGET_MODEL'] = 'product.template.attribute.line'
 STEPS['step_9']['SEARCH_DOMAIN'] = []
-STEPS['step_9']['SEARCH_DOMAINS'] = [[('id', '!=', False)]]
+STEPS['step_9']['SEARCH_DOMAINS'] = [[]]
 STEPS['step_9']['FIELDS'] = ['product_tmpl_id', 'attribute_id', 'value_ids']
 STEPS['step_9']['SKIP_FIELDS'] = []
 STEPS['step_9']['RELATIONAL_FIELDS'] = ['product_tmpl_id', 'attribute_id', 'value_ids']
@@ -245,7 +286,7 @@ STEPS['step_9']['COMPARE_FILED'] = ''
 STEPS['step_10']['MODEL'] = 'product.product'
 STEPS['step_10']['TARGET_MODEL'] = ''
 STEPS['step_10']['SEARCH_DOMAIN'] = []
-STEPS['step_10']['SEARCH_DOMAINS'] = [[('attribute_value_ids', '=', False)]]
+STEPS['step_10']['SEARCH_DOMAINS'] = [[]]
 STEPS['step_10']['FIELDS'] = ['default_code', 'specifications', 'image', 'attribute_value_ids', 'product_tmpl_id']
 STEPS['step_10']['SKIP_FIELDS'] = []
 STEPS['step_10']['RELATIONAL_FIELDS'] = ['product_template_attribute_value_ids', 'product_tmpl_id']
@@ -335,11 +376,38 @@ STEPS['step_14']['FIELD_MAPPING'] = {}
 STEPS['step_14']['ORDER'] = 'id'
 STEPS['step_14']['COMPARE_FILED'] = ''
 
+# [14] product.properties.static - product.set
+STEPS['step_141']['MODEL'] = 'product.properties.static'
+STEPS['step_141']['TARGET_MODEL'] = ''
+STEPS['step_141']['SEARCH_DOMAIN'] = [('object_id', '!=', False)]
+STEPS['step_141']['SEARCH_DOMAINS'] = [[('object_id', 'ilike', 'product.set')]]
+STEPS['step_141']['FIELDS'] = ['mdgp_class', 'mdgp_material', 'mdgp_category', 'mdgp_risk', 'mdgp_mri_allow',
+                              'mdgp_mri_type',
+                              'mdgp_steril_hosp', 'mdgp_steril_man', 'mdgp_useage', 'mdgp_service', 'mdgp_type',
+                              'mdgp_anatomy',
+                              'mdgp_device', 'mdgr_mil_spec', 'mdgr_future_c2', 'mdgr_future_c3', 'mdgr_alt_obs_code',
+                              'mdgr_alt_obs_desc', 'mdgr_alt_obs_web', 'mdgr_alt_obs_price', 'mdbg_gmdn', 'mdbg_umdns',
+                              'mdbg_bda_code', 'mdbg_bda_price', 'mdbg_rei_code', 'mdbg_rei_price',
+                              'mdbg_future_code', 'mdcy_cda_code', 'mdcy_cda_price', 'mdcy_rei_code', 'mdcy_rei_price',
+                              'mdcy_future_code', 'mdcy_gesy_desc', 'mdgr_eof_code', 'mdgr_eof_price',
+                              'mdgr_observe_code',
+                              'mdgr_observe_desc', 'mdgr_observe_price', 'mdgr_future_code', 'mdgr_ekapty_code',
+                              'mdgr_observe_link', 'object_id',
+                              ]
+STEPS['step_141']['SKIP_FIELDS'] = []
+STEPS['step_141']['RELATIONAL_FIELDS'] = ['object_id', 'mdgp_class', 'mdgp_category', 'mdgp_risk', 'mdgp_mri_allow',
+                                         'mdgp_steril_hosp',
+                                         'mdgp_steril_man', 'mdgp_useage', 'mdgp_service', 'mdgp_type', 'mdgp_anatomy',
+                                         'mdgp_device', 'mdgr_mil_spec']
+STEPS['step_141']['FIELD_MAPPING'] = {}
+STEPS['step_141']['ORDER'] = 'id'
+STEPS['step_141']['COMPARE_FILED'] = ''
+
 # [15] 	product.set
 STEPS['step_15']['MODEL'] = 'product.set'
 STEPS['step_15']['TARGET_MODEL'] = ''
 STEPS['step_15']['SEARCH_DOMAIN'] = []
-STEPS['step_15']['SEARCH_DOMAINS'] = [[('id', '!=', False)]]
+STEPS['step_15']['SEARCH_DOMAINS'] = [[('id', '=', 1277)]]
 STEPS['step_15']['FIELDS'] = ['name', 'code', 'image', 'partner_id', 'company_id']
 STEPS['step_15']['SKIP_FIELDS'] = []
 STEPS['step_15']['RELATIONAL_FIELDS'] = ['partner_id', 'company_id']
@@ -354,7 +422,7 @@ STEPS['step_15']['COMPARE_FILED'] = 'code'
 STEPS['step_25']['MODEL'] = 'product.set'
 STEPS['step_25']['TARGET_MODEL'] = ''
 STEPS['step_25']['SEARCH_DOMAIN'] = []
-STEPS['step_25']['SEARCH_DOMAINS'] = [[('id', '=', 120)]]
+STEPS['step_25']['SEARCH_DOMAINS'] = [[('id', '=', 1277)]]
 STEPS['step_25']['FIELDS'] = ['name', 'pricelist_id']
 STEPS['step_25']['SKIP_FIELDS'] = []
 STEPS['step_25']['RELATIONAL_FIELDS'] = [
@@ -368,11 +436,11 @@ STEPS['step_25']['COMPARE_FILED'] = 'code'
 # [16] 	product.set.line
 STEPS['step_16']['MODEL'] = 'product.set.line'
 STEPS['step_16']['TARGET_MODEL'] = ''
-STEPS['step_16']['SEARCH_DOMAIN'] = [('product_tmpl_id', '!=', 114973)]
+STEPS['step_16']['SEARCH_DOMAIN'] = [('product_set_id', '=', 1277)]
 STEPS['step_16']['SEARCH_DOMAINS'] = [[('id', '!=', False)]]
-STEPS['step_16']['FIELDS'] = ['product_set_id', 'product_tmpl_id', 'quantity', 'sequence', 'company_id']
+STEPS['step_16']['FIELDS'] = ['product_set_id', 'product_tmpl_id', 'quantity', 'sequence']
 STEPS['step_16']['SKIP_FIELDS'] = []
-STEPS['step_16']['RELATIONAL_FIELDS'] = ['product_id', 'product_set_id', 'product_tmpl_id', 'company_id']
+STEPS['step_16']['RELATIONAL_FIELDS'] = ['product_id', 'product_set_id', 'product_tmpl_id']
 STEPS['step_16']['FIELD_MAPPING'] = {
 }
 STEPS['step_16']['ORDER'] = 'id'
@@ -425,14 +493,15 @@ STEPS['step_181']['ORDER'] = 'id'
 STEPS['step_181']['COMPARE_FILED'] = ''
 
 # [19] 	sale.order
+# 'patient_data_file_id'
 STEPS['step_19']['MODEL'] = 'sale.order'
 STEPS['step_19']['TARGET_MODEL'] = 'sale.order'
-STEPS['step_19']['SEARCH_DOMAIN'] = []
+STEPS['step_19']['SEARCH_DOMAIN'] = [('date_order', '>=', '2024-11-01')]
 STEPS['step_19']['SEARCH_DOMAINS'] = [[('company_id', '=', 6)]]
 STEPS['step_19']['FIELDS'] = ['name', 'date_order', 'partner_id', 'partner_contact_id', 'partner_invoice_id',
-                              'partner_shipping_id', '', 'company_id', 'validity_date', 'create_date',
-                              'currency_id', 'amount_untaxed', 'amount_tax', 'amount_total', 'patient_data_file_id',
-                              'assistant_contact_ids']
+                              'company_id', 'validity_date', 'create_date',
+                              'currency_id', 'amount_untaxed', 'amount_tax', 'amount_total',
+                              'assistant_contact_ids', 'state']
 STEPS['step_19']['SKIP_FIELDS'] = []
 STEPS['step_19']['RELATIONAL_FIELDS'] = ['partner_id', 'partner_contact_id', 'partner_doctor_id', 'partner_invoice_id',
                                          'partner_shipping_id', 'currency_id', 'company_id', 'pricelist_id',
@@ -446,10 +515,10 @@ STEPS['step_19']['COMPARE_FILED'] = ''
 # [191] sale.order fast link
 STEPS['step_191']['MODEL'] = 'sale.order'
 STEPS['step_191']['TARGET_MODEL'] = 'sale.order'
-STEPS['step_191']['SEARCH_DOMAIN'] = []
+STEPS['step_191']['SEARCH_DOMAIN'] = [('date_order', '>=', '2024-11-01')]
 STEPS['step_191']['SEARCH_DOMAINS'] = [[('company_id', '=', 6)]]
 STEPS['step_191']['FIELDS'] = ['patient_data_file_id',
-                              'assistant_contact_ids']
+                              'assistant_contact_ids', 'state']
 STEPS['step_191']['SKIP_FIELDS'] = []
 STEPS['step_191']['RELATIONAL_FIELDS'] = ['patient_data_file_id', 'assistant_contact_ids']
 STEPS['step_191']['FIELD_MAPPING'] = {
@@ -460,11 +529,11 @@ STEPS['step_191']['COMPARE_FILED'] = ''
 # [20] 	sale.order.line
 STEPS['step_20']['MODEL'] = 'sale.order.line'
 STEPS['step_20']['TARGET_MODEL'] = ''
-STEPS['step_20']['SEARCH_DOMAIN'] = [('company_id', '=', 6)]
+STEPS['step_20']['SEARCH_DOMAIN'] = [('order_id.company_id', '=', 6), ('product_id.product_tmpl_id', 'in', [103771])]
 STEPS['step_20']['SEARCH_DOMAINS'] = [[]]
-# STEPS['step_20']['FIELDS'] = ['pricelist_id', 'company_id', 'currency_id', 'product_id', 'price_unit', 'product_uom',
-#                               'product_uom_qty', 'product_set_id', 'discount', 'order_id']
-STEPS['step_20']['FIELDS'] = ['price_unit', 'order_id', 'product_id']
+STEPS['step_20']['FIELDS'] = ['pricelist_id', 'company_id', 'currency_id', 'product_id', 'price_unit', 'product_uom',
+                              'product_uom_qty', 'product_set_id', 'discount', 'order_id']
+# STEPS['step_20']['FIELDS'] = ['price_unit', 'order_id', 'product_id']
 STEPS['step_20']['SKIP_FIELDS'] = []
 STEPS['step_20']['RELATIONAL_FIELDS'] = ['pricelist_id', 'company_id', 'currency_id', 'categ_id', 'product_tmpl_id',
                                          'product_id', 'order_id', 'product_uom',
@@ -481,7 +550,7 @@ STEPS['step_20']['COMPARE_FILED'] = ''
 STEPS['step_22']['MODEL'] = 'purchase.order'
 STEPS['step_22']['TARGET_MODEL'] = ''
 STEPS['step_22']['SEARCH_DOMAIN'] = []
-STEPS['step_22']['SEARCH_DOMAINS'] = [[('company_id', '=', 6)]]
+STEPS['step_22']['SEARCH_DOMAINS'] = [[('company_id', '=', 1)]]
 STEPS['step_22']['FIELDS'] = ['name', 'origin', 'partner_ref', 'date_order', 'date_approve', 'partner_id', 'dest_address_id',
                               'company_id', 'picking_type_id', 'picking_type_id',
                               'currency_id']
@@ -497,19 +566,38 @@ STEPS['step_22']['FIELD_ID_MAPPING'] = {
 STEPS['step_22']['ORDER'] = 'id'
 STEPS['step_22']['COMPARE_FILED'] = ''
 
+# [221] 	purchase.order
+STEPS['step_221']['MODEL'] = 'purchase.order'
+STEPS['step_221']['TARGET_MODEL'] = ''
+STEPS['step_221']['SEARCH_DOMAIN'] = [('id', '>', 2930)]
+STEPS['step_221']['SEARCH_DOMAINS'] = [[('company_id', '=', 6)]]
+STEPS['step_221']['FIELDS'] = ['state', 'company_id']
+STEPS['step_221']['CHILD_FIELDS'] = []
+STEPS['step_221']['SKIP_FIELDS'] = []
+STEPS['step_221']['RELATIONAL_FIELDS'] = ['company_id', 'partner_id']
+STEPS['step_221']['FIELD_MAPPING'] = {
+
+}
+STEPS['step_221']['FIELD_ID_MAPPING'] = {
+    # 'fiscal_position_id': [[31, 32, 33], [10, 11, 12]],
+}
+STEPS['step_221']['ORDER'] = 'id'
+STEPS['step_221']['COMPARE_FILED'] = ''
+
 # [23] 	purchase.order.line
+# [728, 777, 778, 781, 827, 1176, 2579]
 STEPS['step_23']['MODEL'] = 'purchase.order.line'
 STEPS['step_23']['TARGET_MODEL'] = ''
-STEPS['step_23']['SEARCH_DOMAIN'] = [('order_id.sets_line', '=', False)]
-STEPS['step_23']['SEARCH_DOMAINS'] = [[('order_id.company_id', '=', 6), ('order_id', 'in', [1313, 1196, 2042, 2918])]]
-STEPS['step_23']['FIELDS'] = ['company_id', 'currency_id', 'categ_id',
+STEPS['step_23']['SEARCH_DOMAIN'] = []
+STEPS['step_23']['SEARCH_DOMAINS'] = [[('order_id.company_id', '=', 5)]]
+STEPS['step_23']['FIELDS'] = ['company_id', 'currency_id', 'partner_id',
                               'product_id', 'order_id', 'product_uom',
                               'product_set_id', 'product_qty', 'price_unit']
 STEPS['step_23']['CHILD_FIELDS'] = []
 STEPS['step_23']['SKIP_FIELDS'] = []
 STEPS['step_23']['RELATIONAL_FIELDS'] = ['company_id', 'currency_id', 'categ_id', 'product_tmpl_id',
                                          'product_id', 'order_id', 'product_uom', 'taxes_id', 'price_unit',
-                                         'product_set_id']
+                                         'product_set_id', 'company_id', 'partner_id']
 STEPS['step_23']['FIELD_MAPPING'] = {
 
 }
@@ -677,8 +765,8 @@ STEPS['step_32']['COMPARE_FILED'] = ''
 
 STEPS['step_33']['MODEL'] = 'stock.production.lot'
 STEPS['step_33']['TARGET_MODEL'] = 'stock.lot'
-STEPS['step_33']['SEARCH_DOMAIN'] = []
-STEPS['step_33']['SEARCH_DOMAINS'] = [[('id', '!=', False)]]
+STEPS['step_33']['SEARCH_DOMAIN'] = [('id', '=', 38123)]
+STEPS['step_33']['SEARCH_DOMAINS'] = [[]]
 STEPS['step_33']['FIELDS'] = ['name', 'ref', 'product_id', 'create_date', 'company_id']
 STEPS['step_33']['CHILD_FIELDS'] = []
 STEPS['step_33']['SKIP_FIELDS'] = []
@@ -705,7 +793,7 @@ STEPS['step_34']['COMPARE_FILED'] = ''
 # res.users
 STEPS['step_35']['MODEL'] = 'res.users'
 STEPS['step_35']['TARGET_MODEL'] = 'res.users'
-STEPS['step_35']['SEARCH_DOMAIN'] = [('id', 'not in', [251, 2])]
+STEPS['step_35']['SEARCH_DOMAIN'] = [('id', 'not in', [1, 428])]
 STEPS['step_35']['SEARCH_DOMAINS'] = [[('id', '!=', False)]]
 STEPS['step_35']['FIELDS'] = ['login', 'signature', 'tz_offset', 'name', 'email']
 STEPS['step_35']['CHILD_FIELDS'] = []
@@ -733,7 +821,7 @@ STEPS['step_36']['COMPARE_FILED'] = ''
 # patient.data
 STEPS['step_37']['MODEL'] = 'patient.data'
 STEPS['step_37']['TARGET_MODEL'] = ''
-STEPS['step_37']['SEARCH_DOMAIN'] = [('company_id', '=', 6), ("order_ids", "!=", False), ('id', '>=', 55452)]
+STEPS['step_37']['SEARCH_DOMAIN'] = [('company_id', '=', 6), ("order_ids", "!=", False)]
 STEPS['step_37']['SEARCH_DOMAINS'] = [[]]
 STEPS['step_37']['FIELDS'] = ['name', 'partner_patient_id', 'partner_id',
                               'patient_clinical_path_ref', 'patient_incident_nr', 'patient_visit_nr',
@@ -820,7 +908,7 @@ STEPS['step_41']['COMPARE_FILED'] = ''
 # stock.picking
 STEPS['step_42']['MODEL'] = 'stock.picking'
 STEPS['step_42']['TARGET_MODEL'] = ''
-STEPS['step_42']['SEARCH_DOMAIN'] = [('company_id', '=', 6), ('purchase_id', '!=', False)]
+STEPS['step_42']['SEARCH_DOMAIN'] = [('company_id', '=', 6)]
 STEPS['step_42']['SEARCH_DOMAINS'] = [[]]
 STEPS['step_42']['FIELDS'] = ['name', 'origin', 'note', 'move_type', 'scheduled_date', 'date', 'state',
                               'date_done', 'location_id', 'location_dest_id', 'picking_type_id', 'picking_type_code',
@@ -838,6 +926,8 @@ STEPS['step_42']['ORDER'] = 'id'
 STEPS['step_42']['COMPARE_FILED'] = ''
 
 # stock.move
+# [14021, 13990, 13873, 13798, 13797, 13780, 13772]
+# [14530,14508,14477,14358,14315,14309,14295,14202,14076]
 STEPS['step_43']['MODEL'] = 'stock.move'
 STEPS['step_43']['TARGET_MODEL'] = ''
 STEPS['step_43']['SEARCH_DOMAIN'] = [('company_id', '=', 6), ('purchase_line_id', '!=', False)]
@@ -845,7 +935,7 @@ STEPS['step_43']['SEARCH_DOMAINS'] = [[]]
 STEPS['step_43']['FIELDS'] = ['name', 'sequence', 'create_date', 'date', 'company_id', 'product_id', 'state',
                               'product_uom_qty', 'product_uom', 'location_id',
                               'location_dest_id', 'partner_id', 'picking_id', 'price_unit',
-                              'origin', 'picking_type_id', 'warehouse_id', 'reference', 'purchase_line_id', 'sale_line_id']
+                              'origin', 'picking_type_id', 'warehouse_id', 'reference', 'sale_line_id', 'purchase_line_id']
 STEPS['step_43']['CHILD_FIELDS'] = []
 STEPS['step_43']['SKIP_FIELDS'] = []
 STEPS['step_43']['EXCEPTION_FIELDS'] = [
@@ -858,10 +948,10 @@ STEPS['step_43']['FIELD_MAPPING'] = {
 STEPS['step_43']['ORDER'] = 'id'
 STEPS['step_43']['COMPARE_FILED'] = ''
 
-# stock.move.line
+# stock.move.line  ('move_id.purchase_line_id', 'in', [2997, 2987, 2962, 2920, 2918, 2900, 2887, 2880, 2874, 2841, 2833])
 STEPS['step_44']['MODEL'] = 'stock.move.line'
 STEPS['step_44']['TARGET_MODEL'] = ''
-STEPS['step_44']['SEARCH_DOMAIN'] = [('picking_id.company_id', '=', 6), ('move_id.sale_line_id', '=', False)]
+STEPS['step_44']['SEARCH_DOMAIN'] = [('picking_id.company_id', '=', 6),  ('move_id.purchase_line_id', '!=', False)]
 STEPS['step_44']['SEARCH_DOMAINS'] = [[]]
 STEPS['step_44']['FIELDS'] = ['picking_id', 'move_id', 'product_id', 'product_uom_id', 'product_uom_qty',
                               'qty_done', 'lot_id', 'date', 'location_id', 'location_dest_id', 'picking_id.company_id'
@@ -938,7 +1028,6 @@ class OdooClient:
 
 
 def auto_get_fields(source, target):
-    print('Configured fields #', FIELDS)
     source_model = MODEL
     target_model = TARGET_MODEL or MODEL
     source_model_id = source.search_and_read(
@@ -947,14 +1036,17 @@ def auto_get_fields(source, target):
             ('model', '=', source_model)
         ],
         ['name'])
-    print(f'source_model_id: {source_model_id}')
+    # print(f'source_model_id: {source_model_id}')
     source_field_ids = source.search_and_read(
         'ir.model.fields',
         [
             ('model_id', '=', source_model_id[0]['id'])
         ],
         ['name'])
-    print("MODEL", source_model, source_model_id, source_field_ids)
+    source_field = {}
+    for field in source_field_ids:
+        source_field[field.get('id')] = field.get('name')
+    print("SOURCE MODEL", source_model, source_model_id[0].get('name'), '\n', list(source_field.values()))
 
     target_model_id = target.search_and_read(
         'ir.model',
@@ -967,15 +1059,22 @@ def auto_get_fields(source, target):
             ('model_id', '=', target_model_id[0]['id'])
         ],
         ['name'])
-    print("MODEL", target_model, target_model_id, target_field_ids)
-    for field in source_field_ids:
-        if field['name'] in target_field_ids:
-            if not set(FIELDS).intersection(set(field['name'])):
-                FIELDS.append(field['name'])
-        elif field['name'] not in target_field_ids and FIELD_MAPPING.get(field['name']):
-            FIELDS.append(field['name'])
-    print('Used fields #', FIELDS)
-
+    target_field = {}
+    for field in target_field_ids:
+        target_field[field.get('id')] = field.get('name')
+    target_field_values = target_field.values()
+    print("TARGET MODEL", target_model, target_model_id[0].get('name'), '\n', list(target_field_values))
+    auto_Fields = set([])
+    for field in source_field.values():
+        if field in MADGIC_FIELDS:
+            continue
+        if field in target_field_values:
+            # if not set(FIELDS).intersection(set(field)):
+            auto_Fields.update([field])
+        elif field not in target_field_values and FIELD_MAPPING.get(field):
+            auto_Fields.update([field])
+    print('Used fields #', list(auto_Fields))
+    return list(auto_Fields)
 
 def map_fields(source_record, field_mapping):
     dest_record = {}
@@ -1043,10 +1142,16 @@ def search_read_ir_model_data(relation_record, field_name, model, external_key=F
 
     # Try for system external id
     if relation_record.get('block') or not parent_id:
+        if isinstance(relation_record[field_name], int):
+            ip_search = relation_record[field_name]
+        elif isinstance(relation_record[field_name], list):
+            ip_search = relation_record[field_name][0]
+        else:
+            ip_search = relation_record[field_name]
         parent_id = odoo_src.search_and_read(
             'ir.model.data',
             [
-                ('res_id', '=', relation_record[field_name][0]),
+                ('res_id', '=', ip_search),
                 ('module', '!=', '__import__'),
                 ('model', '=', model)],
             ['name', 'module'])
@@ -1062,7 +1167,7 @@ def search_read_ir_model_data(relation_record, field_name, model, external_key=F
                 relation_record[field_name] = parent_id[0]['res_id']
                 if relation_record.get('block'):
                     del relation_record['block']
-                print('Result relation from system#', model, f'{parent_id[0]["module"]}{parent_id[0]["name"]}',
+                print('Result relation from system#', model, f'{parent_id[0]["res_id"]}',
                       relation_record.get('block') and 'for block' or 'for save', parent_id)
             else:
                 relation_record['block'] = True
@@ -1234,6 +1339,12 @@ def process_relation_field(relation_record, field_name, relation_model, original
 
             elif field_name == 'employee_id':
                 search_read_ir_model_data(relation_record, field_name, 'hr.employee', field_value=field_value)
+
+            elif field_name == 'job_position_id':
+                search_read_ir_model_data(relation_record, field_name, 'res.partner.job_position', field_value=field_value)
+
+            elif field_name == 'title':
+                search_read_ir_model_data(relation_record, field_name, 'res.partner.title', field_value=field_value)
 
             elif field_name == 'picking_type_id':
                 search_read_ir_model_data(relation_record, field_name, 'stock.picking.type', field_value=field_value)
@@ -1494,9 +1605,9 @@ def process_relation_field(relation_record, field_name, relation_model, original
                         'ir.model.data',
                         [
                             ('name', '=', f'source_product_uom_{field_value[0]}'),
-                            ('model', '=', 'product.uom')],
+                            ('model', 'in', ['uom.uom', 'product.uom'])],
                         ['res_id'])
-                # print(parent_id)
+                print(parent_id)
                 if parent_id:
                     relation_record[field_name] = parent_id[0]['res_id']
                 else:
@@ -1729,6 +1840,54 @@ def process_relation_field(relation_record, field_name, relation_model, original
             # If it's a single element list/tuple, unpack the single value
             relation_record[field_name] = field_value[0]
 
+
+        elif field_name == 'object_id' and relation_record['object_id'].split(',')[0] == 'product.set':
+            parent_id = product_set_id = False
+            source_model, source_res_id = relation_record['object_id'].split(',')
+
+            source_id = odoo_src.search_and_read(
+                source_model,
+                [
+                    ('id', '=', source_res_id)
+                ],
+                ['name'])
+            if source_id:
+                product_set_id = odoo_dest.search_and_read(
+                    'ir.model.data',
+                    [
+                        ('name', '=', f'source_product_set_{source_id[0]["id"]}'),
+                        ('model', '=', 'product.set')],
+                    ['res_id'])
+            if source_id:
+                parent_id = odoo_dest.search_and_read(
+                    'product.set',
+                    [
+                        ('id', '=', product_set_id[0]['res_id'])
+                    ],
+                    ['product_prop_static_id'])
+
+            if parent_id and parent_id[0]['product_prop_static_id']:
+                print('parent_id', parent_id)
+                relation_record['product_prop_static_id'] = parent_id[0]['product_prop_static_id'][0]
+                existing_id = odoo_dest.search_and_read('ir.model.data',
+                                                        [
+                                                            ('name', '=',
+                                                             f'source_{MODEL.replace(".", "_")}_{relation_record["id"]}'),
+                                                            ('model', '=', MODEL)
+                                                        ],
+                                                        ['res_id'])
+                if not existing_id:
+                    odoo_dest.odoo.env['ir.model.data'].create({
+                        'name': f'source_{MODEL.replace(".", "_")}_{relation_record["id"]}',
+                        'model': MODEL,
+                        'module': 'remote_multi_company',
+                        'res_id': relation_record['product_prop_static_id'],
+                    })
+                relation_record['object_id'] = f"product.set,{parent_id[0]['id']}"
+                del relation_record['product_prop_static_id']
+            else:
+                relation_record['block'] = True
+
         elif field_name == 'object_id' and relation_record['object_id'].split(',')[0] == 'product.product':
             # print('object_id', relation_record['object_id'])
             parent_id = product_product_id = False
@@ -1853,6 +2012,11 @@ def process_record(active_model, active_record, original_record):
     # Check and modify the active record based on specific conditions
     if active_model == 'res.partner':  # Example for 'res.partner' active model
         # Check if 'company_type' is neither 'person' nor 'company'
+        if active_record.get('name', False):
+            active_record['name'] = active_record['name'].strip()
+
+        if active_record.get('type') == 'private':
+            active_record['type'] = 'other'
         if active_record.get('type') == 'doctor':
             active_record['type'] = 'contact'
             active_record['medical_type'] = 'doctor'
@@ -1895,6 +2059,11 @@ def process_record(active_model, active_record, original_record):
         active_record['block'] = True
     elif active_record.get('currency_id') and active_record['currency_id'] == 27:
         active_record['currency_id'] = 26
+    elif active_model == 'product.template' and VERSION_DEST >= 18 and active_record.get('type'):
+        if active_record['type'] == 'consu':
+            active_record['type'] = 'combo'
+        elif active_record['type'] == 'product':
+            active_record['type'] = 'consu'
     elif active_model == 'product.attribute.value' and TARGET_MODEL:
         ids_product = set([])
         attribute_id = odoo_dest.search_and_read(
@@ -2017,7 +2186,7 @@ def process_step_mode_1(step):
                       display_processed_record(record))
                 os.environ['CURRENT_ROW'] = f"{record['id']}"
                 mapped_record = map_fields(record, FIELD_MAPPING)  # Pass the field_mapping dictionary here
-                print('mapped_record #', FIELD_MAPPING, mapped_record)
+                print('mapped_record #', FIELD_MAPPING, display_processed_record(mapped_record))
                 mapped_record = default_fields(mapped_record, DEFAULT_FIELDS)  # replace with default data
                 processed_record = process_record(MODEL, mapped_record, record)  # Process the record
                 processed_record = map_fields_id(processed_record, FIELD_ID_MAPPING) # Process the id mapping
@@ -2218,17 +2387,30 @@ def process_step_mode_1(step):
                 if existing_id:
                     res_id = existing_id[0].get('res_id') or existing_id[0].get('id')
                     # Update existing record
-                    odoo_dest.odoo.env[target_model].write(res_id, processed_record)
+                    try:
+                        odoo_dest.odoo.env[target_model].with_context(remote_multi_company=False).write(res_id, processed_record)
+                    except odoorpc.error.RPCError as exc:
+                        pp(exc.info)
                 else:
                     # Create new record with external_id set
-                    res_id = odoo_dest.odoo.env[target_model].create(processed_record)
+                    # company_id = odoo_dest.odoo.env['res.company'].search([('id', '=', processed_record['company_id'])])
+                    # company_id = odoo_dest.odoo.env['res.company'].browse(company_id)
+                    try:
+                        res_id = odoo_dest.odoo.env[target_model].with_context(remote_multi_company=False).create(processed_record)
+                    except odoorpc.error.RPCError as exc:
+                        res_id = False
+                        pp(exc.info)
                     # if TARGET_MODEL != 'product.set.pricelist':
-                    odoo_dest.odoo.env['ir.model.data'].create({
-                        'name': f'source_{MODEL.replace(".", "_")}_{record["id"]}',
-                        'model': target_model,
-                        'module': 'remote_multi_company',
-                        'res_id': res_id,
-                    })
+                    if res_id:
+                        try:
+                            odoo_dest.odoo.env['ir.model.data'].create({
+                                'name': f'source_{MODEL.replace(".", "_")}_{record["id"]}',
+                                'model': target_model,
+                                'module': 'remote_multi_company',
+                                'res_id': res_id,
+                            })
+                        except odoorpc.error.RPCError as exc:
+                            pp(exc.info)
                     # res_id = new_id
                 # if target_model == 'product.manufacturer.datasheets' and odoo_dest.path and processed_record[
                 #     'store_fname']:
@@ -2353,8 +2535,12 @@ def process_step_mode_2(step):
 
 if __name__ == '__main__':
     file_name = len(sys.argv) > 1 and sys.argv[1] or "odoo2odoo.ini"
+    if os.environ.get('FILENAME'):
+        folder = os.path.split(file_name)[0]
+        file_name = os.environ['FILENAME']
+        file_name = os.path.join(folder, file_name)
     print(f"argv: {sys.argv[0]} {file_name}")
-    print(glob.glob("/etc/odoo/conf/*"))
+    # print(glob.glob("/etc/odoo/conf/*"))
     with open(file_name) as f:
         print(f.read())
 
@@ -2376,14 +2562,19 @@ if __name__ == '__main__':
         print("Starting step", f'step_{step}', STEPS[f'step_{step}'])
         MODEL = STEPS[f'step_{step}']['MODEL']
         TARGET_MODEL = STEPS[f'step_{step}']['TARGET_MODEL']
+
         SEARCH_DOMAIN = STEPS[f'step_{step}']['SEARCH_DOMAIN']
         SEARCH_DOMAINS = STEPS[f'step_{step}']['SEARCH_DOMAINS']
 
         FIELDS = STEPS[f'step_{step}']['FIELDS']
-        SKIP_FIELDS = STEPS[f'step_{step}']['SKIP_FIELDS']
-        RELATIONAL_FIELDS = STEPS[f'step_{step}']['RELATIONAL_FIELDS']
         FIELD_MAPPING = STEPS[f'step_{step}']['FIELD_MAPPING']
         FIELD_ID_MAPPING = STEPS[f'step_{step}'].get('FIELD_ID_MAPPING', {})
+        SKIP_FIELDS = STEPS[f'step_{step}']['SKIP_FIELDS']
+        RELATIONAL_FIELDS = STEPS[f'step_{step}']['RELATIONAL_FIELDS']
+
+        if STEPS[f'step_{step}'].get('AUTO', False):
+            FIELDS = auto_get_fields(odoo_src, odoo_dest)
+
         ORDER = STEPS[f'step_{step}']['ORDER']
         COMPARE_FILED = STEPS[f'step_{step}']['COMPARE_FILED']
 
@@ -2392,9 +2583,6 @@ if __name__ == '__main__':
 
         EXCEPTION_FIELDS = STEPS[f'step_{step}'].get('EXCEPTION_FIELDS') or []
         ACTION = STEPS[f'step_{step}'].get('ACTION') or False
-
-        if STEPS[f'step_{step}'].get('AUTO', False):
-            auto_get_fields(odoo_src, odoo_dest)
 
         if GLOBAL_MODE == 1:
             process_step_mode_1(step)
